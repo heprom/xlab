@@ -2,6 +2,7 @@ from __future__ import print_funtion, division
 #%% librairie standard
 import os
 import time
+from threading import Thread
 #%% dépendances tierces
 import PyTango
 import numpy as np
@@ -94,10 +95,81 @@ class MechanicalTest(object):
             return self.camera.image
         self.add_image_sensor(snap)
 
-    def set_load_path(self, function=monotonous, args=(1e-3, -1)):
+    def set_sample(self, sample_name, base_directory):
+        self.sample_name = sample_name
+        self.out_directory = os.path.join(base_directory, sample_name)
+
+    def check_all(self, strict=True):
+        errors = []
+        if not self.check_actuator():
+            errors.append('The actuator is not in the right state')
+        for f in self.signal_sensors:
+            try:
+                f()
+            except Exception as e:
+                errors.append(e)
+        for f in self.image_sensors:
+            try:
+                f()
+            except Exception as e:
+                errors.append(e)
+        try:
+            os.makedirs(self.out_directory)
+        except OSError:
+            if strict:
+                errors.append('The output directory already exists')
+        if len(errors):
+            print(errors)
+        else:
+            print('All seems correct')
+            return True
+
+    class Data_Acquisition(Thread): # modulaire mais moins efficace que la version initiale
+
+        def __init__(self, mt, dt=0.12):
+            self.dt = dt
+            Thread.__init__(self)
+
+        def _wait(self, t_ref):
+            try:
+                time.sleep(t_ref + self.dt - time.time())
+            except ValueError:
+                print('Warning: Impossible to maintain the requested rate!')
+            
+        def run(self):
+            counter = 0
+            with open(mt.out_directory + mt.sample_name + '_data.log', 'a') as data_file:
+                pattern = ';'.join(['{:.4f}' for _ in ['time'] + mt.signal_sensors]) + '\n'
+                t0 = time.time()
+                while mt.data_acquisition:
+                    t_ref = time.time()
+                    data_file.write(pattern.format(time.time()-t0, *[f() for f in mt.signal_sensors])
+                    for i, get_img in enumerate(mt.image_sensors):
+                        tifffile.imsave(out_directory + sample_name + '_img{}_{:04d}.tiff'.format(i, counter), get_img)#(basler.image/2**4).astype(np.uint8))
+                    self._wait(t_ref)
+                    counter += 1
+
+    class Data_Display(Thread):
+        pass
+
+    def set_load_path(self, function=monotonous, args=(1e-3, -1), kwargs={}):
         self.load_path = function
         self.load_path_args = args
         self.load_path_kwargs = kwargs
+
+    def run(self, **kwargs):
+        # acquisition
+        mt.data_acquisition = True
+        mt.data_acquisition_thread = Data_Acquisition({k:v for k,v in kwargs.items() if k in ['dt']})
+        # visualisation
+        # mouvement
+        try:
+            mt.data_acquisition_thread.run()
+            self.load_path(*self.load_path_args, **self.load_path_kwargs)
+        except BaseException as e:
+            self.actuator.stop()
+            mt.data_acquisition = False
+            self.last_error = e
 #%%
 def monotonous(mt, speed=1e-3, direction=-1)
     """mt is a MechanicalTest instance
