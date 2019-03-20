@@ -184,3 +184,11 @@ def monotonous(mt, speed=1e-3, direction=-1)
             mt.actuator.backwards() # attention, gérer l'arret moteur 
     else:
         raise ValueError
+#%%
+if __name__ == '__main__':
+    test = MechanicalTest()
+    test.set_actuator('bulky')
+    test.add_sai_sensor('sai', channel=1)
+    test.set_sample('test_xlab.py', '/root/Desktop/Maxime')
+    if test.check_all():
+        test.run()
