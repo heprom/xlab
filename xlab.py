@@ -124,6 +124,7 @@ class MechanicalTest(object):
             print('All seems correct')
             return True
 
+
     class Data_Acquisition(Thread): # modulaire mais moins efficace que la version initiale
 
         def __init__(self, mt, dt=0.12):
@@ -135,7 +136,7 @@ class MechanicalTest(object):
                 time.sleep(t_ref + self.dt - time.time())
             except ValueError:
                 print('Warning: Impossible to maintain the requested rate!')
-            
+
         def run(self):
             counter = 0
             with open(mt.out_directory + mt.sample_name + '_data.log', 'a') as data_file:
@@ -149,8 +150,46 @@ class MechanicalTest(object):
                     self._wait(t_ref)
                     counter += 1
 
+
     class Data_Display(Thread):
-        pass
+
+        def __init__(self, mt, ind=[0,1], gain=1, dt=0.12):
+            self.dt = dt
+            self.mt = mt
+            self.x = ind[0]
+            self.y = ind[-1]
+            self.lx = [0]
+            self.ly = [0]
+            self.gain = gain
+            Thread.__init__(self)
+
+        def _wait(self, t_ref):
+            try:
+                time.sleep(t_ref + self.dt - time.time())
+            except ValueError:
+                print('Warning: Impossible to maintain the requested rate!')
+
+        def run(self):
+            x0 = self.mt.signal_sensors[self.x]()
+            y0 = self.mt.signal_sensors[self.y]()
+            for i in range(10):
+                 self.l_x.append(self.mt.signal_sensors[self.x]()-x0)
+                 self.l_y.append((self.mt.signal_sensors[self.x]()-y0)*self.gain)
+                 time.sleep(.05)
+            fig = plt.figure(figsize=(20,10))
+            plt.ion()
+            plt.show()
+            ax = fig.add_subplot(111)
+            ax.set_xlabel("Position moteur (mm)")
+            ax.set_ylabel("Force (N)")
+            line, = ax.plot(self.lx, self.ly)
+            while mt.data_display:
+                self.l_x.append(self.mt.signal_sensors[self.x]()-x0)
+                self.l_y.append((self.mt.signal_sensors[self.x]()-y0)*self.gain)
+                ax.set_xlim(min(l_x),max(l_x))
+                ax.set_ylim(min(l_y),max(l_y))
+            	line.set_data(l_m,l_c)
+
 
     def set_load_path(self, function=monotonous, args=(1e-3, -1), kwargs={}):
         self.load_path = function
@@ -160,8 +199,10 @@ class MechanicalTest(object):
     def run(self, **kwargs):
         # acquisition
         mt.data_acquisition = True
-        mt.data_acquisition_thread = Data_Acquisition({k:v for k,v in kwargs.items() if k in ['dt']})
+        mt.data_acquisition_thread = Data_Acquisition(self, {k:v for k,v in kwargs.items() if k in ['dt']})
         # visualisation
+        mt.data_display = True
+        mt.data_display_thread = Data_Display(self, dt=.5)
         # mouvement
         try:
             mt.data_acquisition_thread.run()
@@ -169,6 +210,7 @@ class MechanicalTest(object):
         except BaseException as e:
             self.actuator.stop()
             mt.data_acquisition = False
+            mt.data_display = False
             self.last_error = e
 #%%
 def monotonous(mt, speed=1e-3, direction=-1)
@@ -181,7 +223,7 @@ def monotonous(mt, speed=1e-3, direction=-1)
         if direction > 0:
             mt.actuator.forward() # attention arrêt, limites...
         else:
-            mt.actuator.backwards() # attention, gérer l'arret moteur 
+            mt.actuator.backwards() # attention, gérer l'arret moteur
     else:
         raise ValueError
 #%%
@@ -190,6 +232,5 @@ if __name__ == '__main__':
     test.set_actuator('bulky')
     test.add_sai_sensor('sai', channel=1)
     test.set_sample('test_xlab.py', '/root/Desktop/Maxime')
-    test.set_load_path()
     if test.check_all():
         test.run()
