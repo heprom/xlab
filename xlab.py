@@ -190,5 +190,6 @@ if __name__ == '__main__':
     test.set_actuator('bulky')
     test.add_sai_sensor('sai', channel=1)
     test.set_sample('test_xlab.py', '/root/Desktop/Maxime')
+    test.set_load_path()
     if test.check_all():
         test.run()
