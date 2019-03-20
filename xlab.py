@@ -19,6 +19,7 @@ class MechanicalTest(object):
     def __init__(self, config='xlab'):
         self.load_config(config)
         self.signal_sensors = []
+        self.signal_sensors_lbl = []
         self.image_sensors = []
 
     def set_actuator(self, name):
@@ -29,6 +30,7 @@ class MechanicalTest(object):
         self.actuator_isset = True
         self.actuator_ischecked = False
         self.signal_senors.append(lambda: self.actuator.position)
+        self.signal_sensors_lbl .append('position [mm]')
 
     def check_actuator(self):
         if self.actuator.state() is PyTango._PyTango.DevState.STANDBY:
@@ -55,10 +57,11 @@ class MechanicalTest(object):
     def save_config(self, filename):
         pass
 
-    def add_signal_sensor(self, function):
+    def add_signal_sensor(self, function, label):
         self.signal_sensors.append(function)
+        self.signal_sensors_lbl.append(label)
 
-    def add_sai_sensor(self, name, attribute='', channel=-1):
+    def add_sai_sensor(self, name, attribute='', channel=-1, label=None):
         if not hasattr(self, 'sai'):
             if '/' not in name:
                 name = self._sai[name]
@@ -66,11 +69,13 @@ class MechanicalTest(object):
         if channel in [0, 1, 2, 3]:
             attribute = 'averagechannel' + str(channel)
         if hasattr(self.sai, attribute):
-            self.add_signal_sensor(lambda _: getattr(self.sai, attribute))
+            if label is None:
+                label = name + '.' + attribute
+            self.add_signal_sensor(lambda _: getattr(self.sai, attribute), label)
         else:
             raise TypeError
         ## start the sai !
-        ## limitation une sai !
+        ## limité à une sai pour l'instant
 
     def add_image_sensor(self, function):
         self.image_sensors.append(function)
