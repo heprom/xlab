@@ -128,12 +128,12 @@ class MechanicalTest(object):
                 errors.append('The output directory already exists')
         if len(errors):
             print(errors)
+            return False
         else:
             print('All seems correct')
             return True
 
-
-    class Data_Acquisition(Thread): # modulaire mais moins efficace que la version initiale
+    class Data_Acquisition(Thread):  # modulaire mais moins efficace que la version initiale
 
         def __init__(self, mt, dt=0.12):
             self.dt = dt
@@ -153,17 +153,16 @@ class MechanicalTest(object):
                 t0 = time.time()
                 while self.mt.data_acquisition:
                     t_ref = time.time()
-                    data_file.write(pattern.format(time.time()-t0, *[f() for f in mt.signal_sensors])
+                    data_file.write(pattern.format(time.time() - t0, *[f() for f in mt.signal_sensors]))
                     for i, get_img in enumerate(self.mt.image_sensors):
                         path = out_directory + sample_name + self.mt.image_sensors_filename[i].format(i, counter)
-                        tifffile.imsave(path, get_img)#(basler.image/2**4).astype(np.uint8))
+                        tifffile.imsave(path, get_img)  # (basler.image/2**4).astype(np.uint8))
                     self._wait(t_ref)
                     counter += 1
 
-
     class Data_Display(Thread):
 
-        def __init__(self, mt, ind=[0,1], gain=1, dt=0.12):
+        def __init__(self, mt, ind=[0, 1], gain=1, dt=0.12):
             self.dt = dt
             self.mt = mt
             self.x = ind[0]
@@ -183,9 +182,9 @@ class MechanicalTest(object):
             x0 = self.mt.signal_sensors[self.x]()
             y0 = self.mt.signal_sensors[self.y]()
             for i in range(10):
-                 self.l_x.append(self.mt.signal_sensors[self.x]()-x0)
-                 self.l_y.append((self.mt.signal_sensors[self.x]()-y0)*self.gain)
-                 time.sleep(.05)
+                self.l_x.append(self.mt.signal_sensors[self.x]() - x0)
+                self.l_y.append((self.mt.signal_sensors[self.x]() - y0) * self.gain)
+                time.sleep(.05)
             fig = plt.figure(figsize=(20,10))
             plt.ion()
             plt.show()
@@ -194,12 +193,11 @@ class MechanicalTest(object):
             ax.set_ylabel("Force (N)")
             line, = ax.plot(self.lx, self.ly)
             while mt.data_display:
-                self.l_x.append(self.mt.signal_sensors[self.x]()-x0)
-                self.l_y.append((self.mt.signal_sensors[self.x]()-y0)*self.gain)
-                ax.set_xlim(min(l_x),max(l_x))
-                ax.set_ylim(min(l_y),max(l_y))
-            	line.set_data(l_m,l_c)
-
+                self.l_x.append(self.mt.signal_sensors[self.x]() - x0)
+                self.l_y.append((self.mt.signal_sensors[self.x]() - y0) * self.gain)
+                ax.set_xlim(min(l_x), max(l_x))
+                ax.set_ylim(min(l_y), max(l_y))
+                line.set_data(l_m, l_c)
 
     def set_load_path(self, function=monotonous, args=(1e-3, -1), kwargs={}):
         self.load_path = function
@@ -209,7 +207,7 @@ class MechanicalTest(object):
     def run(self, **kwargs):
         # acquisition
         mt.data_acquisition = True
-        mt.data_acquisition_thread = Data_Acquisition(self, {k:v for k,v in kwargs.items() if k in ['dt']})
+        mt.data_acquisition_thread = Data_Acquisition(self, {k:v for k, v in kwargs.items() if k in ['dt']})
         # visualisation
         mt.data_display = True
         mt.data_display_thread = Data_Display(self, dt=.5)
