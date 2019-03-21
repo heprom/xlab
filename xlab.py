@@ -128,6 +128,7 @@ class MechanicalTest(object):
                 errors.append('The output directory already exists')
         if len(errors):
             print(errors)
+            self.errors = errors
             return False
         else:
             print('All seems correct')
@@ -153,16 +154,16 @@ class MechanicalTest(object):
                 t0 = time.time()
                 while self.mt.data_acquisition:
                     t_ref = time.time()
-                    data_file.write(pattern.format(time.time() - t0, *[f() for f in mt.signal_sensors]))
+                    data_file.write(pattern.format(time.time() - t0, *[f() for f in self.mt.signal_sensors]))
                     for i, get_img in enumerate(self.mt.image_sensors):
-                        path = out_directory + sample_name + self.mt.image_sensors_filename[i].format(i, counter)
+                        path = self.mt.out_directory + self.mt.sample_name + self.mt.image_sensors_filename[i].format(i, counter)
                         tifffile.imsave(path, get_img)  # (basler.image/2**4).astype(np.uint8))
                     self._wait(t_ref)
                     counter += 1
 
     class Data_Display(Thread):
 
-        def __init__(self, mt, ind=[0, 1], gain=1, dt=0.12):
+        def __init__(self, mt, ind=[0, 1], gain=1, dt=0.12, figsize=(20, 10)):
             self.dt = dt
             self.mt = mt
             self.x = ind[0]
@@ -170,6 +171,7 @@ class MechanicalTest(object):
             self.lx = [0]
             self.ly = [0]
             self.gain = gain
+            self.figsize = figsize
             Thread.__init__(self)
 
         def _wait(self, t_ref):
@@ -185,19 +187,19 @@ class MechanicalTest(object):
                 self.l_x.append(self.mt.signal_sensors[self.x]() - x0)
                 self.l_y.append((self.mt.signal_sensors[self.x]() - y0) * self.gain)
                 time.sleep(.05)
-            fig = plt.figure(figsize=(20,10))
+            fig = plt.figure(self.figsize)
             plt.ion()
             plt.show()
             ax = fig.add_subplot(111)
             ax.set_xlabel("Position moteur (mm)")
             ax.set_ylabel("Force (N)")
             line, = ax.plot(self.lx, self.ly)
-            while mt.data_display:
+            while self.mt.data_display:
                 self.l_x.append(self.mt.signal_sensors[self.x]() - x0)
                 self.l_y.append((self.mt.signal_sensors[self.x]() - y0) * self.gain)
-                ax.set_xlim(min(l_x), max(l_x))
-                ax.set_ylim(min(l_y), max(l_y))
-                line.set_data(l_m, l_c)
+                ax.set_xlim(min(self.l_x), max(self.l_x))
+                ax.set_ylim(min(self.l_y), max(self.l_y))
+                line.set_data(self.l_m, self.l_c)
 
     def set_load_path(self, function=monotonous, args=(1e-3, -1), kwargs={}):
         self.load_path = function
@@ -206,33 +208,38 @@ class MechanicalTest(object):
 
     def run(self, **kwargs):
         # acquisition
-        mt.data_acquisition = True
-        mt.data_acquisition_thread = Data_Acquisition(self, {k:v for k, v in kwargs.items() if k in ['dt']})
+        self.data_acquisition = True
+        kw = {k: v for k, v in kwargs.items() if k in ['dt']}
+        self.data_acquisition_thread = self.Data_Acquisition(self, **kw)
         # visualisation
-        mt.data_display = True
-        mt.data_display_thread = Data_Display(self, dt=.5)
+        self.data_display = True
+        self.data_display_thread = self.Data_Display(self, dt=.5)
         # mouvement
         try:
-            mt.data_acquisition_thread.run()
+            self.data_acquisition_thread.run()
+            self.data_display_thread.run()
             self.load_path(*self.load_path_args, **self.load_path_kwargs)
         except BaseException as e:
             self.actuator.stop()
-            mt.data_acquisition = False
+            self.data_acquisition = False
             self.last_error = e
+
+
 #%%
 def monotonous(mt, speed=1e-3, direction=-1):
     """mt is a MechanicalTest instance
     speed in mm/s (if good settings of the device !)
     direction is a relative non-zero float"""
     if mt.actuator_isset and mt.actuator_ischecked:
-        direction = direction/abs(direction)
+        direction = direction / abs(direction)
         mt.actuator.velocity = speed
         if direction > 0:
-            mt.actuator.forward() # attention arrêt, limites...
+            mt.actuator.forward()  # attention arrêt, limites...
         else:
-            mt.actuator.backwards() # attention, gérer l'arret moteur
+            mt.actuator.backwards()  # attention, gérer l'arret moteur
     else:
         raise ValueError
+
 #%%
 if __name__ == '__main__':
     test = MechanicalTest()
