@@ -22,7 +22,7 @@ def monotonous(mt, speed=1e-3, direction=-1):
         else:
             mt.actuator.backward()  # attention, gérer l'arret moteur
     else:
-        raise ValueError("You have to check the actuator")
+        raise ValueError("You have to check the actuator before lauching the test.")
 #%%
 
 class MechanicalTest(object):
@@ -67,9 +67,9 @@ class MechanicalTest(object):
         if config == 'xlab_bulky':
             self.set_actuator('d13-1-mines/ex/bulky')
             self.add_sai_sensor('d13-1-mines/ca/sai.1', channel=channel)
-        elif config == 'psiche_bulky':  # non fonctionnel
-            self.set_actuator('tango-mines:d13-1-mines/ex/bulky')
-            self.add_sai_sensor('i03-c-c00/ca/sai.1', channel=channel)
+        #elif config == 'psiche_bulky':  # non fonctionnel
+        #    self.set_actuator('tango-mines:d13-1-mines/ex/bulky')
+        #    self.add_sai_sensor('i03-c-c00/ca/sai.1', channel=channel)
 
     def save_config(self, filename):
         pass
@@ -79,6 +79,7 @@ class MechanicalTest(object):
         self.signal_sensors_lbl.append(label)
 
     def add_sai_sensor(self, name, attribute='', channel=-1, label=None, gain=1):
+        # :todo: application du gain et sauvegarde des deux signaux
         if not hasattr(self, 'sai'):
             if '/' not in name:
                 name = self._sai[name]
@@ -91,8 +92,8 @@ class MechanicalTest(object):
             self.add_signal_sensor(lambda: getattr(self.sai, attribute), label)
         else:
             raise TypeError
-        ## start the sai !
-        ## limité à une sai pour l'instant
+        # :todo: vérifier l'état de la sai et démarrer l'acquisition le cas échéant
+        # :todo: gérer plus d'une sai
 
     def add_image_sensor(self, function, save_pattern):
         self.image_sensors.append(function)
@@ -113,8 +114,8 @@ class MechanicalTest(object):
         if '/' not in name:
             name = self._camera[name]
         self.camera = PyTango.DeviceProxy(name)
-        # limitation une camera !
-        # tester l'état, arreter un mode live...
+        # :todo: gérer plus d'une caméra
+        # :todo: tester l'état, arreter un mode live...
         def snap():
             self.camera.Snap()
             while self.camera.state() is PyTango._PyTango.DevState.RUNNING:
@@ -163,10 +164,12 @@ class MechanicalTest(object):
         if acquisition:
             self.data_acquisition = True
             kw = {k: v for k, v in kwargs.items() if k in ['dt']}
+            # :todo: ajouter une différente cadence pour les images que pour les signaux
             self.data_acquisition_thread = DataAcquisition(self, **kw)
         # visualisation
         if display:
             self.data_display = True
+            # :todo: ajouter le relai des arguments
             self.data_display_thread = DataDisplay(self, dt=.5)
         # mouvement
         try:
@@ -176,7 +179,7 @@ class MechanicalTest(object):
         except BaseException as e:
             self.last_error = e
             t, msg, tb = sys.exc_info()
-            import traceback
+            print(t, msg)
             traceback.print_tb(tb)
             self.stop()
             
@@ -187,6 +190,7 @@ class MechanicalTest(object):
 
 
 class DataAcquisition(Thread):  # modulaire mais moins efficace que la version initiale
+    # :todo: récupérer les images en parralèle pour augmenter l'efficacité
 
     def __init__(self, mt, dt=0.12):
         self.dt = dt
@@ -223,7 +227,7 @@ class DataDisplay(Thread):
         self.l_x = []
         self.l_y = []
         self.gain = gain
-        self.figsize = figsize
+        self.figsize = figsize # non utilisé
         Thread.__init__(self)
 
     def _wait(self, t_ref):
@@ -255,9 +259,6 @@ class DataDisplay(Thread):
         plt.savefig(os.path.join(self.mt.out_directory, self.mt.sample_name + '_plot.pdf'))
 
 #%%
-
-import traceback
-
 if __name__ == '__main__':
     test = MechanicalTest()
     test.set_actuator('bulky')
