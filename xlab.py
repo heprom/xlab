@@ -49,9 +49,6 @@ class MechanicalTest(object):
             self.actuator_ischecked = False
         return self.actuator_ischecked
 
-    def set_load_path(self, ):
-        pass
-
     def load_config(self, config):
         pass
 
@@ -71,15 +68,26 @@ class MechanicalTest(object):
             attribute = 'averagechannel' + str(channel)
         if hasattr(self.sai, attribute):
             if label is None:
-                label = name + '.' + attribute
+                label = name + '.' + attribute + ' [V]'
             self.add_signal_sensor(lambda _: getattr(self.sai, attribute), label)
         else:
             raise TypeError
         ## start the sai !
         ## limité à une sai pour l'instant
 
-    def add_image_sensor(self, function):
+    def add_image_sensor(self, function, save_pattern):
         self.image_sensors.append(function)
+        filename, ext = os.splitext(save_pattern)
+        if not ext:
+            ext = '.tif'
+            print("Info: Images will be saved as TIFF.")
+        elif ext not in ['.tif', '.tiff']:
+            print("Warning: Other format than TIFF are not supported for the moment.")
+            ext = '.tif'
+            print("Info: Images will be saved as TIFF.")
+        if '{' not in filename:
+            filename += '_{:05d}'
+        self.image_sensors_filename.append(filename + ext)
 
     def add_camera(self, name):
         """for tango camera devices"""
@@ -129,6 +137,7 @@ class MechanicalTest(object):
 
         def __init__(self, mt, dt=0.12):
             self.dt = dt
+            self.mt = mt
             Thread.__init__(self)
 
         def _wait(self, t_ref):
@@ -139,14 +148,15 @@ class MechanicalTest(object):
 
         def run(self):
             counter = 0
-            with open(mt.out_directory + mt.sample_name + '_data.log', 'a') as data_file:
-                pattern = ';'.join(['{:.4f}' for _ in ['time'] + mt.signal_sensors]) + '\n'
+            with open(self.mt.out_directory + self.mt.sample_name + '_data.log', 'a') as data_file:
+                pattern = ';'.join(['{:.4f}' for _ in ['time'] + self.mt.signal_sensors]) + '\n'
                 t0 = time.time()
-                while mt.data_acquisition:
+                while self.mt.data_acquisition:
                     t_ref = time.time()
                     data_file.write(pattern.format(time.time()-t0, *[f() for f in mt.signal_sensors])
-                    for i, get_img in enumerate(mt.image_sensors):
-                        tifffile.imsave(out_directory + sample_name + '_img{}_{:04d}.tiff'.format(i, counter), get_img)#(basler.image/2**4).astype(np.uint8))
+                    for i, get_img in enumerate(self.mt.image_sensors):
+                        path = out_directory + sample_name + self.mt.image_sensors_filename[i].format(i, counter)
+                        tifffile.imsave(path, get_img)#(basler.image/2**4).astype(np.uint8))
                     self._wait(t_ref)
                     counter += 1
 
@@ -210,10 +220,9 @@ class MechanicalTest(object):
         except BaseException as e:
             self.actuator.stop()
             mt.data_acquisition = False
-            mt.data_display = False
             self.last_error = e
 #%%
-def monotonous(mt, speed=1e-3, direction=-1)
+def monotonous(mt, speed=1e-3, direction=-1):
     """mt is a MechanicalTest instance
     speed in mm/s (if good settings of the device !)
     direction is a relative non-zero float"""
