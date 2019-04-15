@@ -257,13 +257,3 @@ class DataDisplay(Thread):
             ax.set_ylim(min(self.l_y), max(self.l_y))
             line.set_data(self.l_x, self.l_y)
         plt.savefig(os.path.join(self.mt.out_directory, self.mt.sample_name + '_plot.pdf'))
-
-#%%
-if __name__ == '__main__':
-    test = MechanicalTest()
-    test.set_actuator('bulky')
-    test.add_sai_sensor('sai', channel=0)
-    test.set_sample('test_1', '/root/Desktop/Maxime')
-    test.set_load_path(speed=3e-3)
-    if test.check_all(strict=False):
-        test.run(display=False)
