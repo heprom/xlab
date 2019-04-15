@@ -1,19 +1,29 @@
 from __future__ import print_function, division
-#%% librairie standard
+#%% from the Python Standard Library
 import os
 import time
 from threading import Thread
 import traceback, sys
-#%% dépendances tierces
+#%% third party code (available through PIP)
 import PyTango
 import numpy as np
 from matplotlib import pyplot as plt
 import tifffile
 #%%
+
 def monotonous(mt, speed=1e-3, direction=-1):
-    """mt is a MechanicalTest instance
-    speed in mm/s (if good settings of the device !)
-    direction is a relative non-zero float"""
+    """Simple monotounous loading.
+    
+    Parameters
+    ----------
+    mt: a `xlab.MechanicalTest` instance
+    speed: float, optional
+        Crosshead velocity in the same unit than the actuator configuration (usually mm/s).
+    direction: non-zero float, optional
+        The sign gives the direction of the displacement and the value stands for an extra gear ratio.
+        .. warning:: Depending on how the wiring has been connected, this can be reversed, 
+        always check and make a small movement after installing the machine.
+    """
     if mt.actuator_isset and mt.actuator_ischecked:
         direction = direction / abs(direction)
         mt.actuator.velocity = speed
@@ -27,6 +37,7 @@ def monotonous(mt, speed=1e-3, direction=-1):
 
 class MechanicalTest(object):
 
+    # list of known devices and alias
     _actuators = {'bulky': 'd13-1-mines/ex/bulky'}
     _sai = {'sai': 'd13-1-mines/ca/sai.1'}
     _camera = {'basler': 'd13-1-mines/dt/baslermines.1'}
