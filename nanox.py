@@ -121,6 +121,8 @@ with GCSDevice() as pidevice:
             print('no test done')
     
     def rampe(n, amp, pos, t):
+        """Function to create a ramp signal.
+        """
         wavegens = 1
         wavetables = 1
         print('define sine waveforms for wave tables {}'.format(wavetables))
