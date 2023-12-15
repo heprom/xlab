@@ -53,6 +53,13 @@ with GCSDevice() as pidevice:
         
             
     def Position(pos) :
+        """Apply a given voltage to the piezo actuator.
+
+        Set the given voltage to the atcuator. Internally, the method calls the SVA command 
+        on the first axis (we only have one) : SVA{<AxisID> <Amplitude>}
+
+        @param float pos: the input voltage
+        """
         print('device to starting position')
         pidevice.SVA(1, pos)
         
