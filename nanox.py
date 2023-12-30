@@ -188,6 +188,14 @@ with GCSDevice() as pidevice:
         
         
     def processdata(drec):
+        '''Function to plot the recorded data
+        
+        This function creates 2 plot with the library matplotlib : 
+        figure 1 is the Volt / Time plot with the output voltage of the controller.
+        figure 2 is the Load / Time plot with the recorded load by the Clipx.
+            
+        @param drec : instance to the data recorder tools Datarecorder.
+        '''
         if pyplot is None:
             print('matplotlib is not installed')
             return
