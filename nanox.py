@@ -75,6 +75,9 @@ with GCSDevice() as pidevice:
         """Function to create a sine wave signal.
 
         This function creates a sine wave with the specified parameters with the WAVE_SIN_P command.
+        The WSL command set the connection of Wave Table to Wave Generator.
+        The WGC command set the number of cycles.
+        The WTR command set the Wave Table rate.
         The command is started with WGO.  
 
         @param int np: the number of points in one cycle.
@@ -130,6 +133,17 @@ with GCSDevice() as pidevice:
     
     def rampe(n, amp, pos, t):
         """Function to create a ramp signal.
+        
+        This function creates a ramp wave with the specified parameters with the WAVE_RAMP command.
+        The WSL command set the connection of Wave Table to Wave Generator.
+        The WGC command set the number of cycles.
+        The WTR command set the Wave Table rate.
+        The command is started with WGO.  
+
+        @param int n: the number cycles.
+        @param float amp: the amplitude in Volts (max is 135 volts).
+        @param int pos: the offset : the starting position of the tensile test.
+        @param int t: the duartion of the test in seconds.
         """
         wavegens = 1
         wavetables = 1
