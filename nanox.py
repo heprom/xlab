@@ -47,6 +47,10 @@ with GCSDevice() as pidevice:
         time.sleep(1)
         
     def ServoMode() :
+        '''Set Servo Mode : False (Openloop) or True (Closeloop).
+        
+        Internally, the method calls the SVO command : SVO {<AxisID> <ServoState>}
+        '''
         ServoMode = input('servo mode ON or OFF ? ')
         if ServoMode == 'OFF':
             pidevice.SVO(1, False)
