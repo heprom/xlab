@@ -111,6 +111,12 @@ with GCSDevice() as pidevice:
 
     
     def fatigue() :
+        '''This function set and start the fatigue test.
+        
+        It sets the test with a user interface in the console and calling the functions AutoZero, ServoMode and Position.
+        It start the test with calling the sinus function while the recorddata function record the test.
+        At the end this function returns the plots of the test with calling the processdata function.
+        '''
         TIME = 1/(float(input('entrer la fréquence de votre essai : '))) # number of points for one sine period as integer (servo uptade time : 20us)
         NUMPOINTS = TIME/0.00002
         STARTPOS = int(input('entrer la position de départ de votre essai : '))  # start position of the circular motion as float for both axes
@@ -172,6 +178,12 @@ with GCSDevice() as pidevice:
         print('done')
             
     def traction() :
+        '''This function set and start the tensile test.
+        
+        It sets the test with a user interface in the console and calling the functions AutoZero, ServoMode and Position.
+        It start the test with calling the sinus function while the recorddata function record the test.
+        At the end this function returns the plots of the test with calling the processdata function.
+        '''
         TIME = int(input('entrer la période de votre essai : ')) # number of points for one sine period as integer (servo uptade time : 20us)
         STARTPOS = float(input('entrer la position de départ de votre essai : '))  # start position of the circular motion as float for both axes
         NUMCYLES=1
