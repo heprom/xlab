@@ -35,6 +35,10 @@ with GCSDevice() as pidevice:
     pitools.startup(pidevice, stages=STAGES, refmodes=REFMODES)
             
     def AutoZero() :
+        '''Set Automatic Zero Point Calibration.
+        
+        Internally, the method calls the ATZ command : ATZ [{<AxisID> <LowValue>}]
+        '''
         print('AutoZero initialisation...')
         pidevice.ATZ(1, 0)
         pitools.waitonautozero(pidevice, 1)
