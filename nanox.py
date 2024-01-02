@@ -71,7 +71,7 @@ with GCSDevice() as pidevice:
         print('device to starting position')
         pidevice.SVA(1, pos)
         
-    def sinus(np, n, amp, pos, t, start) :
+    def sinus(np, n, amp, pos) :
         """Function to create a sine wave signal.
 
         This function creates a sine wave with the specified parameters with the WAVE_SIN_P command.
@@ -84,7 +84,7 @@ with GCSDevice() as pidevice:
         @param int n: the number cycles.
         @param float amp: the amplitude in Volts (max is 135 volts).
         """
-        #FIXME remove parameters t and start
+        
         print(pos)
         wavegens = 1
         wavetables = 2
