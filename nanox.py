@@ -201,6 +201,11 @@ with GCSDevice() as pidevice:
              print('no test done') 
         
     def move(amp) :
+        '''This function allows for simplified traction in the case where you wish to start a fatigue test at a load greater than 0N.
+        
+        Set the given voltage to the actuator with a step of 0.1V every 0.1s. Internally, the method calls the SVA command 
+        on the first axis (we only have one) : SVA{<AxisID> <Amplitude>}
+        '''
         STARTPOS=0
         AMPLITUDE=amp
         for i in np.arange(int(STARTPOS),AMPLITUDE,0.1):
