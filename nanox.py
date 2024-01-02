@@ -14,15 +14,8 @@ import numpy as np
 CONTROLLERNAME = 'E-754' 
 STAGES = None  
 REFMODES = None
-TABLERATE = 10  # duration of a wave table point in multiples of servo cycle times as integer
-NUMVALUES = 1024  # number of data sets to record as integer
-#RECRATE = 200 #number of recordings per second, i.e. in Hz
-
-
-
-
-
-        
+TABLERATE = 10  
+NUMVALUES = 1024
 
             
 def AutoZero(pidevice) :
@@ -108,12 +101,12 @@ def fatigue(pidevice) :
     It start the test with calling the sinus function while the recorddata function record the test.
     At the end this function returns the plots of the test with calling the processdata function.
     '''
-    TIME = 1/(float(input('entrer la fréquence de votre essai : '))) # number of points for one sine period as integer (servo uptade time : 20us)
+    TIME = 1/(float(input('entrer la fréquence de votre essai : '))) 
     NUMPOINTS = TIME/0.00002
-    STARTPOS = int(input('entrer la position de départ de votre essai : '))  # start position of the circular motion as float for both axes
+    STARTPOS = int(input('entrer la position de départ de votre essai : '))  
     VMIN = (float(input('entrer l amplitude min de votre essai en V : ')))
-    VMAX = (float(input('entrer l amplitude max de votre essai en V : ')))  # amplitude of the circular motion as float for both axes
-    NUMCYLES = int(input('entrer le nombre de cycle de votre essai : '))  # number of cycles for wave generator output
+    VMAX = (float(input('entrer l amplitude max de votre essai en V : ')))  
+    NUMCYLES = int(input('entrer le nombre de cycle de votre essai : '))  
     
     AutoZero(pidevice)
     ServoMode(pidevice)
@@ -175,10 +168,10 @@ def traction(pidevice) :
     It start the test with calling the sinus function while the recorddata function record the test.
     At the end this function returns the plots of the test with calling the processdata function.
     '''
-    TIME = int(input('entrer la période de votre essai : ')) # number of points for one sine period as integer (servo uptade time : 20us)
-    STARTPOS = float(input('entrer la position de départ de votre essai : '))  # start position of the circular motion as float for both axes
+    TIME = int(input('entrer la période de votre essai : ')) 
+    STARTPOS = float(input('entrer la position de départ de votre essai : '))  
     NUMCYLES=1
-    AMPLITUDE = (float(input('entrer l amplitude de votre essai en V : ')))  # amplitude of the circular motion as float for both axes
+    AMPLITUDE = (float(input('entrer l amplitude de votre essai en V : '))) 
     AutoZero(pidevice)
     ServoMode(pidevice)
     Position(STARTPOS, pidevice)        
@@ -276,7 +269,5 @@ def main():
             fatigue(pidevice)
         elif test == 'traction' :
             traction(pidevice)
-    
-    
-    
+     
 main() 
