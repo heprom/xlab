@@ -195,11 +195,18 @@ with GCSDevice() as pidevice:
             pidevice.SVA(1, i) 
             print(pidevice.qSVA(1)[1])
             time.sleep(0.1)
-        
-     
-           
+         
        
     def recorddata(drec, t):
+        '''Function to plot the recorded data
+        
+        This function creates 2 record table : the first one is the output voltage of the controller
+        the second one is the recorded load by the analog IN of the controller.
+        It also set the record time of the test.
+            
+        @param drec : instance to the data recorder tools Datarecorder.
+        @param int t : the duration of the test in seconds.
+        '''
         drec.numvalues = NUMVALUES
         drec.samplefreq = 1/(t/1000)
         print('data recorder rate: {:.2f} Hz'.format(drec.samplefreq))
