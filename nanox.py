@@ -59,7 +59,7 @@ def Position(pos, pidevice) :
     pidevice.SVA(1, pos)
     
 def sinus(np, n, amp, pos, pidevice) :
-    """Function to create a sine wave signal.
+    """Function to create a sine wave signal, start the sine wave signal and grab images.
 
     This function creates a sine wave with the specified parameters with the WAVE_SIN_P command.
     The WSL command set the connection of Wave Table to Wave Generator.
@@ -126,7 +126,7 @@ def fatigue(pidevice) :
         print('no test done')
 
 def rampe(n, amp, pos, t, pidevice):
-    """Function to create a ramp signal.
+    """Function to create a ramp signal, start the ramp signal and grab images.
     
     This function creates a ramp wave with the specified parameters with the WAVE_RAMP command.
     The WSL command set the connection of Wave Table to Wave Generator.
@@ -208,8 +208,8 @@ def move(amp, pidevice) :
 def recorddata(drec, t, pidevice):
     '''Function to plot the recorded data
     
-    This function creates 2 record table : the first one is the output voltage of the controller
-    the second one is the recorded load by the analog IN of the controller.
+    This function one record table with the DRC method: DRC {<RecTableID> <Source> <RecOption>}
+    It record load by the analog IN of the controller and the time of the the test.
     It also set the record time of the test.
         
     @param drec : instance to the data recorder tools Datarecorder.
@@ -225,9 +225,8 @@ def recorddata(drec, t, pidevice):
 def processdata(drec):
     '''Function to plot the recorded data
     
-    This function creates 2 plot with the library matplotlib : 
-    figure 1 is the Volt / Time plot with the output voltage of the controller.
-    figure 2 is the Load / Time plot with the recorded load by the Clipx.
+    This function creates a plot with the library matplotlib : 
+    the Load / Time plot with the recorded on the Analog IN of the controller.
         
     @param drec : instance to the data recorder tools Datarecorder.
     '''
