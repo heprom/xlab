@@ -2,7 +2,7 @@
 """
 Created on Thu Nov 23 14:00:58 2023
 
-@author: farge
+@author: antoine farges
 """
 
 import time 
@@ -192,9 +192,11 @@ def traction(pidevice) :
          print('no test done') 
     
 def move(amp, pidevice) :
-    '''This function allows for simplified traction in the case where you wish to start a fatigue test at a load greater than 0N.
+    '''This function allows for simplified traction in the case where 
+    you want to start a fatigue test at a load greater than 0N.
     
-    Set the given voltage to the actuator with a step of 0.1V every 0.1s. Internally, the method calls the SVA command 
+    Set the given voltage to the actuator with a step of 0.1V every 0.1s. 
+    Internally, the method calls the SVA command 
     on the first axis (we only have one) : SVA{<AxisID> <Amplitude>}
     '''
     STARTPOS=0
