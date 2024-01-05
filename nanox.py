@@ -243,16 +243,18 @@ def processdata(drec):
     print('save GCSArray to file "gcsarray.dat"')
     pitools.savegcsarray('gcsarray.dat', drec.header, drec.data)
 
-def capture_and_save_image(camera, output_folder, t):
+def capture_and_save_image(camera, output_folder):
     '''This function grab images at the same rate as the datarecorder and save them to a folder in TIFF format.
     
     This function is grabbing image with the GrabOne method of the pypylon library.
     
     @param camera : instance camera which is already used and open.
     @param output_folder : instance to save the save the images.
-    @param int t : the duration of the test in seconds.
     '''
-
+    camera.Height.Value = 500
+    camera.Width.Value = 2048
+    camera.OffsetX.SetValue(200)
+    camera.OffsetY.SetValue(800)
     grabResult = camera.GrabOne(5000, pylon.TimeoutHandling_ThrowException) 
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     filename = f"{output_folder}/image_{timestamp}.tiff"
