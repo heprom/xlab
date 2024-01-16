@@ -19,7 +19,7 @@ REFMODES = None
 TABLERATE = 10  
 NUMVALUES = 1024
 output_folder = os.path.join(os.path.expanduser("~"), "Documents", "Images_Camera")
-
+folder = os.path.join(os.path.expanduser("~"), "Documents", "data_fatigue_2")
             
 def AutoZero(pidevice) :
     '''Set Automatic Zero Point Calibration.
@@ -58,7 +58,7 @@ def Position(pos, pidevice) :
     print('device to starting position')
     pidevice.SVA(1, pos)
     
-def sinus(np, n, amp, pos, pidevice) :
+def sinus(np, n, amp, pos, t, T, pidevice) :
     """Function to create a sine wave signal, start the sine wave signal and grab images.
 
     This function creates a sine wave with the specified parameters with the WAVE_SIN_P command.
@@ -70,33 +70,42 @@ def sinus(np, n, amp, pos, pidevice) :
     @param int np: the number of points in one cycle.
     @param int n: the number cycles.
     @param float amp: the amplitude in Volts (max is 135 volts).
+    @param int t: the duration of a wave generator.
+    @param int T: the number cycles for one wave generator before taking a picture of the sample.
     """
-    
-    print(pos)
-    wavegens = 1
-    wavetables = 2
+    drec = datarectools.Datarecorder(pidevice)
     camera = pylon.InstantCamera(pylon.TlFactory.GetInstance().CreateFirstDevice())
     camera.Open()
-    print('define sine waveforms for wave tables {}'.format(wavetables))
-    pidevice.WAV_SIN_P(table=wavetables, firstpoint=0, numpoints=int(np), append='X',
-                       center=np/2, amplitude=amp, offset=pos, seglength=int(np))
-    pitools.waitonready(pidevice)
-    if pidevice.HasWSL(): 
-        print('connect wave generators {} to wave tables {}'.format(wavegens, wavetables))
-        pidevice.WSL(wavegens, wavetables)
-    if pidevice.HasWGC(): 
-        print('set wave generators {} to run for {} cycles'.format(wavegens, n))
-        pidevice.WGC(wavegens, [n])
-    pidevice.WTR(wavegens=0, tablerates=1, interpol=[1])
-    print('start wave generators {}'.format(wavegens))
-    move(pos, pidevice)
-    pidevice.WGO(wavegens, mode=[1])
-    while any(list(pidevice.IsGeneratorRunning(wavegens).values())):
+    for i in range (int(n//T)) :
+        print(pos)
+        wavegens = 1
+        wavetables = 2
+        
+        
+        print('define sine waveforms for wave tables {}'.format(wavetables))
+        pidevice.WAV_SIN_P(table=wavetables, firstpoint=0, numpoints=int(np), append='X',
+                           center=np/2, amplitude=amp, offset=pos, seglength=int(np))
+        pitools.waitonready(pidevice)
+        if pidevice.HasWSL(): 
+            print('connect wave generators {} to wave tables {}'.format(wavegens, wavetables))
+            pidevice.WSL(wavegens, wavetables)
+        if pidevice.HasWGC(): 
+            print('set wave generators {} to run for {} cycles'.format(wavegens, n))
+            pidevice.WGC(wavegens, [T])
+        pidevice.WTR(wavegens=0, tablerates=1, interpol=[1])
+        recorddata(drec, t*T, pidevice)
+        print('start wave generators {}'.format(wavegens))
+        pidevice.WGO(wavegens, mode=[1])
+        while any(list(pidevice.IsGeneratorRunning(wavegens).values())):
+            print('.', end='')
+            time.sleep(1.0)
+        print('\nreset wave generators {}'.format(wavegens))
+        pidevice.WGO(wavegens, mode=[0])
+        print('done')
+        
+        print('save GCSArray to file "gcsarray.dat"')
+        pitools.savegcsarray(f"{folder}/test_fatigue_{i}.dat", drec.header, drec.data)
         capture_and_save_image(camera, output_folder)
-        time.sleep(0.1)
-    print('\nreset wave generators {}'.format(wavegens))
-    pidevice.WGO(wavegens, mode=[0])
-    print('done')
 
 
 def fatigue(pidevice) :
@@ -107,21 +116,18 @@ def fatigue(pidevice) :
     At the end this function returns the plots of the test with calling the processdata function.
     '''
     TIME = 1/(float(input('entrer la fréquence de votre essai : '))) 
-    NUMPOINTS = TIME/0.00002
-    STARTPOS = int(input('entrer la position de départ de votre essai : '))  
+    NUMPOINTS = TIME/0.00002 
     VMIN = (float(input('entrer l amplitude min de votre essai en V : ')))
     VMAX = (float(input('entrer l amplitude max de votre essai en V : ')))  
-    NUMCYLES = int(input('entrer le nombre de cycle de votre essai : '))  
+    NUMCYLES = int(input('entrer le nombre de cycle de votre essai : '))
+    ENREG = int(input('entrer a quelle frequence de cycles vous souhaitez prendre une image : '))
     AutoZero(pidevice)
     ServoMode(pidevice)
-    Position(STARTPOS, pidevice)
+    Position(VMIN, pidevice)
     go=input('ready to go : YES or NO ? ')        
     if go =='YES' :
         AMPLITUDE = VMAX-VMIN
-        drec = datarectools.Datarecorder(pidevice)
-        recorddata(drec, TIME*NUMCYLES, pidevice)
-        sinus(NUMPOINTS, NUMCYLES, AMPLITUDE, VMIN, pidevice)
-        processdata(drec)
+        sinus(NUMPOINTS, NUMCYLES, AMPLITUDE, VMIN, TIME, ENREG, pidevice)
     elif go == 'NO' :
         print('no test done')
 
@@ -162,7 +168,6 @@ def rampe(n, amp, pos, t, pidevice):
     pidevice.WGO(wavegens, mode=[1])
     while any(list(pidevice.IsGeneratorRunning(wavegens).values())):
         capture_and_save_image(camera, output_folder)
-        time.sleep(0.1)
     print('\nreset wave generators {}'.format(wavegens))
     pidevice.WGO(wavegens, mode=[0])
     print('done')
@@ -220,7 +225,9 @@ def recorddata(drec, t, pidevice):
     drec.numvalues = NUMVALUES
     drec.samplefreq = 1/(t/1000)
     print('data recorder rate: {:.2f} Hz'.format(drec.samplefreq))
-    pidevice.DRC(1, 1, 2)
+    drec.options = (datarectools.RecordOptions.ACTUAL_POSITION_2,
+                    datarectools.RecordOptions.COMMANDED_POSITION_1)
+    drec.sources = drec.gcs.axes[0]
     drec.trigsources = datarectools.TriggerSources.POSITION_CHANGING_COMMAND_1
     
     
@@ -235,11 +242,20 @@ def processdata(drec):
     if pyplot is None:
         print('matplotlib is not installed')
         return
+    
+    pyplot.figure(1)
     pyplot.plot(drec.timescale, drec.data[0], color='red')
     pyplot.xlabel('time (s)')
     pyplot.ylabel('Load (N)')
-    pyplot.title('fatigue test')
-    
+    pyplot.title('traction test')
+    pyplot.grid(True)
+    pyplot.figure(2)
+    pyplot.plot(drec.timescale, drec.data[1], color='blue')
+    pyplot.xlabel('time (s)')
+    pyplot.ylabel('Volt (V)')
+    pyplot.title('traction test')
+    pyplot.grid(True)
+    pyplot.show()
     print('save GCSArray to file "gcsarray.dat"')
     pitools.savegcsarray('gcsarray.dat', drec.header, drec.data)
 
@@ -249,7 +265,7 @@ def capture_and_save_image(camera, output_folder):
     This function is grabbing image with the GrabOne method of the pypylon library.
     
     @param camera : instance camera which is already used and open.
-    @param output_folder : instance to save the save the images.
+    @param output_folder : instance to save the save the images. 
     '''
     camera.Height.Value = 500
     camera.Width.Value = 2048
